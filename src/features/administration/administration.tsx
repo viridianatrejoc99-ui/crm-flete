@@ -23,6 +23,7 @@ import { ExportButton } from '@/components/ui/export-button';
 import { LeadFilters } from '@/features/leads/lead-filters';
 import { assignment, EMPTY_FILTERS, filterLeads } from '@/lib/commercial';
 import { canAdminister } from '@/lib/permissions';
+import { MX_STATES, placeLabel, ZONES } from '@/lib/zones';
 import { downloadWorkbook, leadSheet } from '@/lib/export';
 import type { Lead, User } from '@/types/crm';
 
@@ -47,12 +48,15 @@ function AdminContent() {
   const [error, setError] = useState(false);
   const [minutes, setMinutes] = useState(state.rules.alertMinutes);
   const [filters, setFilters] = useState({ ...EMPTY_FILTERS });
-  const [city, setCity] = useState('Ciudad de México');
+  const [mxState, setMxState] = useState('Ciudad de México');
   const [existing, setExisting] = useState('');
   const [simCount, setSimCount] = useState(0);
   const [simulation, setSimulation] = useState('');
   const [confirmation, setConfirmation] = useState<User | null>(null);
   const advisors = state.users.filter((u) => u.role === 'advisor');
+  const unzoned = MX_STATES.filter(
+    (s) => !ZONES.some((z) => z.states.includes(s)),
+  );
   const leads = filterLeads(state.leads, filters, now);
   function run(fn: () => void, message: string) {
     try {
@@ -73,7 +77,7 @@ function AdminContent() {
           rotationCursor: state.rules.rotationCursor + simCount,
         },
       },
-      city,
+      mxState,
       state.leads.find((l) => l.id === existing),
       now,
     );
@@ -110,10 +114,15 @@ function AdminContent() {
                 name: 'Reglas comerciales',
                 headers: ['Regla', 'Configuración'],
                 rows: [
-                  ['Guadalajara', 'Gabriel'],
-                  ['Monterrey', 'Tania'],
+                  ...ZONES.map((z) => [
+                    `${z.territory} (${z.base}): ${z.states.join(', ')}`,
+                    z.ownerId
+                      ? (state.users.find((u) => u.id === z.ownerId)?.name ??
+                        z.ownerId)
+                      : 'Rotación',
+                  ]),
                   [
-                    'Resto de México',
+                    'Rotación (Valle de México, Bajío, Golfo y Sureste y estados sin zona)',
                     state.rules.rotationIds
                       .map(
                         (id) =>
@@ -200,19 +209,22 @@ function AdminContent() {
             </h2>
           </div>
           <div className="city-rules">
-            <div>
-              <MapPin size={16} />
-              <span>Guadalajara</span>
-              <strong>Gabriel</strong>
-            </div>
-            <div>
-              <MapPin size={16} />
-              <span>Monterrey</span>
-              <strong>Tania</strong>
-            </div>
+            {ZONES.map((z) => (
+              <div key={z.id} title={z.states.join(', ')}>
+                <MapPin size={16} />
+                <span>
+                  {z.territory} · {z.base}
+                </span>
+                <strong>
+                  {z.ownerId
+                    ? state.users.find((u) => u.id === z.ownerId)?.name
+                    : 'Rotación'}
+                </strong>
+              </div>
+            ))}
           </div>
           <span className="small muted">
-            Resto de México · orden de rotación
+            Zonas de rotación y estados sin zona · orden de rotación
           </span>
           <div className="rotation-flow">
             {state.rules.rotationIds.map((id, i) => {
@@ -234,8 +246,12 @@ function AdminContent() {
             <li>Reingresos antes de 90 días conservan al responsable.</li>
             <li>Clientes activos no se reasignan automáticamente.</li>
             <li>
-              Si el asesor fijo de una ciudad está inactivo, la asignación queda
+              Si el asesor fijo de una zona está inactivo, la asignación queda
               para revisión manual.
+            </li>
+            <li>
+              Estados fuera del plano ({unzoned.join(', ')}) entran a la
+              rotación.
             </li>
           </ul>
         </section>
@@ -316,20 +332,17 @@ function AdminContent() {
             </select>
           </label>
           <label>
-            Ciudad
+            Estado
             <select
-              value={city}
+              value={mxState}
               onChange={(e) => {
-                setCity(e.target.value);
+                setMxState(e.target.value);
                 setSimulation('');
               }}
             >
-              <option>Ciudad de México</option>
-              <option>Guadalajara</option>
-              <option>Monterrey</option>
-              <option>Querétaro</option>
-              <option>Puebla</option>
-              <option>Otra ciudad de México</option>
+              {MX_STATES.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
             </select>
           </label>
           <button className="button secondary" onClick={simulate}>
@@ -378,7 +391,7 @@ function AdminContent() {
           description={
             confirmation.active
               ? 'Quedará fuera de nuevas asignaciones y del selector de demostración. Sus leads actuales no se reasignarán automáticamente.'
-              : 'Podrá recibir nuevas asignaciones según las reglas de su ciudad o rotación.'
+              : 'Podrá recibir nuevas asignaciones según las reglas de su zona o rotación.'
           }
           confirmLabel="Confirmar"
           onCancel={() => setConfirmation(null)}
@@ -411,7 +424,7 @@ function Reassignment({
         <Link href={`/leads/${lead.id}`}>
           <strong>{lead.name}</strong>
           <span>
-            {lead.id} · {lead.city}
+            {lead.id} · {placeLabel(lead.city, lead.state)}
           </span>
         </Link>
         <StageBadge stage={lead.stage} />

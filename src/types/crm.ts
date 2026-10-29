@@ -38,6 +38,7 @@ export interface Lead {
   phone: string;
   email: string;
   city: string;
+  state: string;
   estimatedLoads: number;
   channel: Channel;
   campaign: string;
@@ -81,6 +82,7 @@ export interface LeadFilters {
   channel: string;
   stage: string;
   owner: string;
+  zone: string;
   from: string;
   to: string;
   pending: boolean;

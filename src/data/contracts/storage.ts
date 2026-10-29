@@ -15,6 +15,8 @@ const lead = z.object({
   phone: z.string(),
   email: z.string(),
   city: z.string(),
+  // Datos guardados antes del plano de zonas no traen estado.
+  state: z.string().default(''),
   estimatedLoads: z.number().nonnegative(),
   channel: z.enum(CHANNELS),
   campaign: z.string(),

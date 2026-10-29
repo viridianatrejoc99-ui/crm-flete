@@ -8,6 +8,7 @@ import {
   type User,
 } from '@/types/crm';
 import { EMPTY_FILTERS } from '@/lib/commercial';
+import { UNASSIGNED_ZONE, ZONES } from '@/lib/zones';
 export function LeadFilters({
   value,
   onChange,
@@ -111,6 +112,20 @@ export function LeadFilters({
               </select>
             </label>
           )}
+          <label>
+            Zona
+            <select
+              value={value.zone}
+              onChange={(e) => update('zone', e.target.value)}
+            >
+              <option value="">Todas las zonas</option>
+              {[...ZONES, UNASSIGNED_ZONE].map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.territory}
+                </option>
+              ))}
+            </select>
+          </label>
           <label>
             Entrada desde
             <input

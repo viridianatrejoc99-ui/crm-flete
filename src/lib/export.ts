@@ -1,5 +1,6 @@
 import type { Lead, User } from '@/types/crm';
 import { dateTime } from '@/lib/formatting';
+import { zoneForState } from '@/lib/zones';
 export async function downloadWorkbook(
   filename: string,
   sheets: { name: string; headers: string[]; rows: (string | number)[][] }[],
@@ -48,6 +49,9 @@ export function leadSheet(leads: Lead[], users: User[]) {
       'Teléfono',
       'Email',
       'Ciudad',
+      'Estado',
+      'Zona comercial',
+      'Base',
       'Cargas en 4 semanas',
       'Canal',
       'Campaña',
@@ -75,6 +79,9 @@ export function leadSheet(leads: Lead[], users: User[]) {
       l.phone,
       l.email,
       l.city,
+      l.state,
+      zoneForState(l.state).territory,
+      zoneForState(l.state).base,
       l.estimatedLoads,
       l.channel,
       l.campaign,

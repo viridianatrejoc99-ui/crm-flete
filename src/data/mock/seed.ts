@@ -68,12 +68,44 @@ export function createDemoState(now = Date.now()): CRMState {
     'Perdido',
   ];
   const owners = ['alberto', 'yoss', 'rodrigo', 'gabriel', 'tania'];
-  const cities = [
-    'Ciudad de México',
-    'Querétaro',
-    'Puebla',
-    'Guadalajara',
-    'Monterrey',
+  // Ubicaciones por asesor (mismo orden que owners), coherentes con el plano
+  // de zonas: rotación en Valle de México, Bajío, Golfo y estados sin zona.
+  const locations: [string, string][][] = [
+    [
+      ['Ciudad de México', 'Ciudad de México'],
+      ['León', 'Guanajuato'],
+      ['Veracruz', 'Veracruz'],
+      ['Mérida', 'Yucatán'],
+      ['Toluca', 'Estado de México'],
+    ],
+    [
+      ['Querétaro', 'Querétaro'],
+      ['Aguascalientes', 'Aguascalientes'],
+      ['Villahermosa', 'Tabasco'],
+      ['Ciudad de México', 'Ciudad de México'],
+      ['Pachuca', 'Hidalgo'],
+    ],
+    [
+      ['Puebla', 'Puebla'],
+      ['Ciudad de México', 'Ciudad de México'],
+      ['Zacatecas', 'Zacatecas'],
+      ['Cancún', 'Quintana Roo'],
+      ['Celaya', 'Guanajuato'],
+    ],
+    [
+      ['Guadalajara', 'Jalisco'],
+      ['Manzanillo', 'Colima'],
+      ['Tijuana', 'Baja California'],
+      ['Culiacán', 'Sinaloa'],
+      ['Morelia', 'Michoacán'],
+    ],
+    [
+      ['Monterrey', 'Nuevo León'],
+      ['Saltillo', 'Coahuila'],
+      ['Reynosa', 'Tamaulipas'],
+      ['Ciudad Juárez', 'Chihuahua'],
+      ['San Luis Potosí', 'San Luis Potosí'],
+    ],
   ];
   const leads: Lead[] = names.map((name, i) => {
     const stage = stages[Math.floor(i / 5) === 0 ? i % 3 : (i + 2) % 7];
@@ -88,7 +120,8 @@ export function createDemoState(now = Date.now()): CRMState {
       company: `${companies[i % companies.length]} (demo)`,
       phone: `+52 000 000 ${String(1000 + i)}`,
       email: `prospecto${i + 1}@example.com`,
-      city: cities[i % 5],
+      city: locations[i % 5][Math.floor(i / 5)][0],
+      state: locations[i % 5][Math.floor(i / 5)][1],
       estimatedLoads: 4 + (i % 9) * 3,
       channel: CHANNELS[i % CHANNELS.length],
       campaign: i % 6 < 3 ? 'México · transporta más' : 'Captación orgánica',

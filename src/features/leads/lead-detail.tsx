@@ -20,6 +20,7 @@ import { ExportButton } from '@/components/ui/export-button';
 import { canAdminister, canComment, canEditLead } from '@/lib/permissions';
 import { dateTime, fromInputDate, toInputDate } from '@/lib/formatting';
 import { downloadWorkbook, leadSheet } from '@/lib/export';
+import { MX_STATES, placeLabel, zoneForState } from '@/lib/zones';
 import { CHANNELS, STAGES, type Lead } from '@/types/crm';
 import type { ProfileEdit } from './mutations';
 
@@ -48,6 +49,7 @@ function LeadDetailContent({ lead }: { lead: Lead }) {
   const editable = canEditLead(user, lead);
   const admin = canAdminister(user);
   const owner = state.users.find((u) => u.id === lead.ownerId);
+  const zone = zoneForState(lead.state);
   function run(fn: () => void, message: string) {
     try {
       fn();
@@ -64,6 +66,8 @@ function LeadDetailContent({ lead }: { lead: Lead }) {
     ['Teléfono', lead.phone],
     ['Email', lead.email],
     ['Ciudad', lead.city],
+    ['Estado', lead.state || 'Sin estado'],
+    ['Zona comercial', `${zone.territory} · ${zone.base}`],
     ['Cargas estimadas · 4 semanas', lead.estimatedLoads],
     ['Canal de adquisición', lead.channel],
     ['Fecha de entrada', dateTime(lead.enteredAt)],
@@ -84,7 +88,7 @@ function LeadDetailContent({ lead }: { lead: Lead }) {
           </div>
           <h1>{lead.name}</h1>
           <p className="page-description">
-            {lead.company} · {lead.city}
+            {lead.company} · {placeLabel(lead.city, lead.state)}
           </p>
         </div>
         <ExportButton
@@ -489,6 +493,7 @@ function ProfileForm({
       phone: get('phone'),
       email: get('email'),
       city: get('city'),
+      state: get('state'),
       estimatedLoads: Number(get('estimatedLoads')),
       channel: get('channel') as Lead['channel'],
       campaign: get('campaign'),
@@ -499,7 +504,7 @@ function ProfileForm({
       utmContent: get('utmContent'),
     });
   }
-  const fields: [keyof ProfileEdit, string, string][] = [
+  const fields: [Exclude<keyof ProfileEdit, 'state'>, string, string][] = [
     ['name', 'Nombre', 'text'],
     ['company', 'Empresa', 'text'],
     ['phone', 'Teléfono', 'tel'],
@@ -528,6 +533,15 @@ function ProfileForm({
             />
           </label>
         ))}
+        <label>
+          Estado
+          <select name="state" defaultValue={lead.state}>
+            <option value="">Sin estado</option>
+            {MX_STATES.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+        </label>
         <label>
           Canal
           <select name="channel" defaultValue={lead.channel}>

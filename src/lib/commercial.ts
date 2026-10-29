@@ -1,5 +1,6 @@
 import type { CRMState, Lead, LeadFilters, Stage } from '@/types/crm';
 import { localDate } from '@/lib/formatting';
+import { UNASSIGNED_ZONE, zoneForState } from '@/lib/zones';
 
 export function businessMinutes(
   start: string,
@@ -57,6 +58,7 @@ export function filterLeads(
       (!filters.channel || lead.channel === filters.channel) &&
       (!filters.stage || lead.stage === filters.stage) &&
       (!filters.owner || lead.ownerId === filters.owner) &&
+      (!filters.zone || zoneForState(lead.state).id === filters.zone) &&
       (!filters.from || day >= filters.from) &&
       (!filters.to || day <= filters.to) &&
       (!filters.pending ||
@@ -72,6 +74,7 @@ export const EMPTY_FILTERS: LeadFilters = {
   channel: '',
   stage: '',
   owner: '',
+  zone: '',
   from: '',
   to: '',
   pending: false,
@@ -79,7 +82,7 @@ export const EMPTY_FILTERS: LeadFilters = {
 
 export function assignment(
   state: CRMState,
-  city: string,
+  mxState: string,
   existing?: Lead,
   now = Date.now(),
 ): { ownerId: string | null; reason: string; advances: boolean } {
@@ -95,24 +98,16 @@ export function assignment(
       reason: 'Reingreso antes de 90 días: conserva responsable.',
       advances: false,
     };
-  const normalized = city
-    .trim()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-  const fixed =
-    normalized === 'guadalajara'
-      ? 'gabriel'
-      : normalized === 'monterrey'
-        ? 'tania'
-        : null;
-  if (fixed) {
-    const available = state.users.find((u) => u.id === fixed && u.active);
+  const zone = zoneForState(mxState);
+  if (zone.ownerId) {
+    const available = state.users.find(
+      (u) => u.id === zone.ownerId && u.active,
+    );
     return {
       ownerId: available?.id ?? null,
       reason: available
-        ? 'Asignación por ciudad.'
-        : 'Asesor de ciudad inactivo: requiere asignación manual.',
+        ? `Zona ${zone.territory} (${zone.base}).`
+        : `Asesor de la zona ${zone.territory} inactivo: requiere asignación manual.`,
       advances: false,
     };
   }
@@ -124,7 +119,9 @@ export function assignment(
       ? available[state.rules.rotationCursor % available.length]
       : null,
     reason: available.length
-      ? 'Rotación de asesores activos.'
+      ? zone.id === UNASSIGNED_ZONE.id
+        ? 'Estado sin zona en el plano: rotación de asesores activos.'
+        : `Zona ${zone.territory}: rotación de asesores activos.`
       : 'No hay asesores activos en la rotación.',
     advances: available.length > 0,
   };

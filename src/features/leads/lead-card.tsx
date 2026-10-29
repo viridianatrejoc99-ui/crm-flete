@@ -13,6 +13,7 @@ import {
 import { StageBadge } from '@/components/ui/primitives';
 import { dateTime } from '@/lib/formatting';
 import { businessMinutes } from '@/lib/commercial';
+import { placeLabel } from '@/lib/zones';
 import type { Lead, User } from '@/types/crm';
 export function LeadCard({
   lead,
@@ -52,7 +53,7 @@ export function LeadCard({
       <div className="lead-meta">
         <span>
           <MapPin size={14} />
-          {lead.city}
+          {placeLabel(lead.city, lead.state)}
         </span>
         <span className="channel-tag">{lead.channel}</span>
       </div>

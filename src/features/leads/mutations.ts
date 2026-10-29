@@ -1,6 +1,7 @@
 import type { CRMState, Lead, Stage, User } from '@/types/crm';
 import { canAdminister, canComment, canEditLead } from '@/lib/permissions';
 import { stageFacts } from '@/lib/commercial';
+import { MX_STATES } from '@/lib/zones';
 
 export type LeadEdit = Pick<Lead, 'stage' | 'lossReason' | 'nextFollowUp'>;
 export type ProfileEdit = Pick<
@@ -10,6 +11,7 @@ export type ProfileEdit = Pick<
   | 'phone'
   | 'email'
   | 'city'
+  | 'state'
   | 'estimatedLoads'
   | 'channel'
   | 'campaign'
@@ -91,6 +93,11 @@ export function applyAction(
       action.values.estimatedLoads < 0
     )
       throw new Error('Revisa el nombre, la empresa y las cargas.');
+    if (
+      action.values.state &&
+      !(MX_STATES as readonly string[]).includes(action.values.state)
+    )
+      throw new Error('Selecciona un estado de la lista.');
     updated = { ...updated, ...action.values };
     text = 'Datos del prospecto actualizados.';
   } else {
